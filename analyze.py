@@ -275,19 +275,19 @@ def plot_timer(
     timer_period_x, timer_period_y = get_intervals(ranges_timer)
     timer_duration_x, timer_duration_y = get_begins_durations(ranges_timer)
 
-    fig, ax1 = plt.subplots(1, 1, constrained_layout=True)
-    ax2 = ax1.twinx()
+    fig, (ax1, ax2) = plt.subplots(2, 1, constrained_layout=True)
     ax1.plot(timer_period_x, timer_period_y, marker + color_interval, label=label_interval)
     ax2.plot(timer_duration_x, timer_duration_y, marker + color_duration, label=label_duration)
     ax1.grid()
+    ax2.grid()
 
     if include_plot_title:
         ax1.set_title(title)
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel_interval, color=color_interval)
-    ax2.set_ylabel(ylabel_duration, color=color_duration)
-    ax1.tick_params(axis='y', labelcolor=color_interval)
-    ax2.tick_params(axis='y', labelcolor=color_duration)
+    ax2.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel_interval)
+    ax2.set_ylabel(ylabel_duration)
+    ax1.set_xticklabels([])
+    fig.align_ylabels()
 
     filename = f'{trace_name}/{name}'
     fig.savefig(f'{filename}.png')
