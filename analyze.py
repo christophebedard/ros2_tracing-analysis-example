@@ -321,31 +321,36 @@ def to_relative_ms(
 def add_markers_to_axis(
     ax: plt.Axes,
     label: str,
-    times: List[float],
-    color: str,
+    times: List[Tuple[str, float]],
     marker: str = 'o',
     markersize: int = 8,
 ) -> None:
     """Add time markers to axis."""
-    ax.plot(times, [label] * len(times), marker + color, markersize=markersize)
+    for color, time in times:
+        ax.plot([time], [label], marker, color=color, markersize=markersize)
 
 
 def add_ranges_to_axis(
     ax: plt.Axes,
     label: str,
-    ranges: List[Tuple[float, float, float]],
-    color: str,
+    ranges: List[Tuple[str, Tuple[float, float, float]]],
     linewidth: int = 35,
 ) -> None:
     """Add start-end ranges to axis."""
-    for r in ranges:
+    for color, r in ranges:
         ax.plot(
             [r[0], r[1]],
             [label, label],
-            '-' + color,
+            '-',
+            color=color,
             linewidth=linewidth,
             solid_capstyle='butt',  # Prevent line width from affecting length of line
         )
+
+
+def get_default_colors() -> List[str]:
+    """Get the list of default matplotlib colours."""
+    return [p['color'] for p in plt.rcParams['axes.prop_cycle']]
 
 
 def plot_chart(
@@ -379,17 +384,63 @@ def plot_chart(
         time_offset,
     )
 
+    # Assign colours to link input messages to corresponding timer callback and output message
+    assert len(ranges_timer_BehaviorPlanner) == len(times_pub_BehaviorPlanner)
+    colours = get_default_colors()[:len(ranges_timer_BehaviorPlanner)]
+    deadlines = [r[0] for r in ranges_timer_BehaviorPlanner]
+    ranges_timer_BehaviorPlanner = [
+        (colours[i], ranges_timer_BehaviorPlanner[i])
+        for i in range(len(ranges_timer_BehaviorPlanner))
+    ]
+
+    def get_colour(time: float, pre: bool) -> str:
+        """
+        Get colour string for given timestamp.
+
+        :param time: the timestamp
+        :param pre: whether the colour should correspond to the next deadline (True) or the previous one (False)
+        """
+        for i in range(len(deadlines)):
+            deadline = deadlines[i]
+            if pre:
+                # Given time has to be before given deadline, but after previous deadline
+                if (
+                    (0 == i and time <= deadline)
+                    or (i > 0 and time <= deadline and time > deadlines[i - 1])
+                ):
+                    return colours[i]
+            else:
+                # Given time has to be after given deadline, but before next deadline
+                if (
+                    (len(deadlines) - 1 == i and time >= deadline)
+                    or (i < len(deadlines) - 1 and time >= deadline and time < deadlines[i + 1])
+                ):
+                    return colours[i]
+        assert False, 'should have a matching colour'
+
+    def add_colour(times, pre):
+        for i in range(len(times)):
+            times[i] = (get_colour(times[i], pre), times[i])
+
+    add_colour(times_pub_BehaviorPlanner, False)
+    add_colour(times_sub_LanePlanner, True)
+    add_colour(times_sub_ParkingPlanner, True)
+    add_colour(times_sub_Lanelet2MapLoader, True)
+    add_colour(times_sub_Lanelet2GlobalPlanner, True)
+    add_colour(times_sub_NDTLocalizer, True)
+    add_colour(times_sub_ObjectCollisionEstimator, True)
+
     fig, ax = plt.subplots(1, 1, constrained_layout=True)
 
     # Order on Y axis: first->last == bottom->top
-    add_markers_to_axis(ax, 'pub.', times_pub_BehaviorPlanner, 'g')
-    add_ranges_to_axis(ax, 'timer', ranges_timer_BehaviorPlanner, 'b')
-    add_markers_to_axis(ax, 'sub. 6', times_sub_LanePlanner, 'r')
-    add_markers_to_axis(ax, 'sub. 5', times_sub_ParkingPlanner, 'r')
-    add_markers_to_axis(ax, 'sub. 4', times_sub_Lanelet2MapLoader, 'r')
-    add_markers_to_axis(ax, 'sub. 3', times_sub_Lanelet2GlobalPlanner, 'r')
-    add_markers_to_axis(ax, 'sub. 2', times_sub_NDTLocalizer, 'r')
-    add_markers_to_axis(ax, 'sub. 1', times_sub_ObjectCollisionEstimator, 'r')
+    add_markers_to_axis(ax, 'pub.', times_pub_BehaviorPlanner)
+    add_ranges_to_axis(ax, 'timer', ranges_timer_BehaviorPlanner)
+    add_markers_to_axis(ax, 'sub. 6', times_sub_LanePlanner)
+    add_markers_to_axis(ax, 'sub. 5', times_sub_ParkingPlanner)
+    add_markers_to_axis(ax, 'sub. 4', times_sub_Lanelet2MapLoader)
+    add_markers_to_axis(ax, 'sub. 3', times_sub_Lanelet2GlobalPlanner)
+    add_markers_to_axis(ax, 'sub. 2', times_sub_NDTLocalizer)
+    add_markers_to_axis(ax, 'sub. 1', times_sub_ObjectCollisionEstimator)
 
     ax.grid()
     if include_plot_title:
