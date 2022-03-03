@@ -35,9 +35,9 @@ src_dir = 'analysis_ws/src'
 sys.path.insert(0, os.path.join(src_dir, 'tracetools_analysis/tracetools_analysis'))
 sys.path.insert(0, os.path.join(src_dir, 'ros-tracing/ros2_tracing/tracetools_read'))
 
-from tracetools_analysis.loading import load_file
-from tracetools_analysis.processor.ros2 import Ros2Handler
-from tracetools_analysis.utils.ros2 import Ros2DataModelUtil
+from tracetools_analysis.loading import load_file  # noqa: E402
+from tracetools_analysis.processor.ros2 import Ros2Handler  # noqa: E402
+from tracetools_analysis.utils.ros2 import Ros2DataModelUtil  # noqa: E402
 
 
 # Parameters
@@ -148,8 +148,8 @@ def get_sub_callback_ranges(
     }
     sub_objs = [
         obj for obj, owner_info in objs_and_owners.items()
-        if sub_topic_name in owner_info and
-        (node_name in owner_info if node_name is not None else True)
+        if sub_topic_name in owner_info
+        and (node_name in owner_info if node_name is not None else True)
     ]
     assert 1 == len(sub_objs), f'len={len(sub_objs)}'
     sub_obj = sub_objs[0]
@@ -241,7 +241,11 @@ def get_intervals(ranges: TimeRanges) -> Tuple[List[float], List[float]]:
     highest_interval_value = periods[highest_interval_index]
     highest_interval_time = starttime + (np.timedelta64(1, 's') * times[highest_interval_index])
     print(f'Time intervals between: {starttime} - {endtime}')
-    print(f'Highest timer callback interval of {highest_interval_value} ms at {highest_interval_time} or {times[highest_interval_index]} s (interval index={highest_interval_index}, callback index={highest_interval_index + 1})')
+    print(
+        f'Highest timer callback interval of {highest_interval_value} ms at {highest_interval_time} '
+        f'or {times[highest_interval_index]} s '
+        f'(interval index={highest_interval_index}, callback index={highest_interval_index + 1})'
+    )
 
     return times, periods
 
@@ -362,7 +366,7 @@ def plot_chart(
     times_sub_LanePlanner,
     ranges_timer_BehaviorPlanner,
     times_pub_BehaviorPlanner,
-    title: str = 'Message reception \& publication and timer execution',
+    title: str = 'Message reception \& publication and timer execution',  # noqa: W605
     xlabel: str = 'time (ms)',
     name: str = '5_analysis_time_chart',
     time_offset: float = 6.0,  # Manual adjustment
@@ -473,6 +477,8 @@ def main(argv=sys.argv[1:]) -> int:
     # data_util.data.print_data()
 
     # Analyze
+    # The BehaviorPlanner node is a cyclic type node with 6 input topics, 1 periodic callback, and 1 output topic
+    # See: https://github.com/ros-realtime/reference-system/blob/6baa1d0d0061ad901cc08e559d8e6acdb169c18b/autoware_reference_system/include/autoware_reference_system/autoware_system_builder.hpp#L193-L203  # noqa: E501
     times_sub_ObjectCollisionEstimator = get_sub_callback_times('/ObjectCollisionEstimator', 'BehaviorPlanner')
     times_sub_NDTLocalizer = get_sub_callback_times('/NDTLocalizer', 'BehaviorPlanner')
     times_sub_Lanelet2GlobalPlanner = get_sub_callback_times('/Lanelet2GlobalPlanner', 'BehaviorPlanner')
@@ -499,8 +505,8 @@ def main(argv=sys.argv[1:]) -> int:
         times_sub_Lanelet2MapLoader[:num],
         times_sub_ParkingPlanner[:num],
         times_sub_LanePlanner[:num],
-        ranges_timer_BehaviorPlanner[:num+1],
-        times_pub_BehaviorPlanner[:num+1],
+        ranges_timer_BehaviorPlanner[:num + 1],
+        times_pub_BehaviorPlanner[:num + 1],
     )
 
     plt.show()
