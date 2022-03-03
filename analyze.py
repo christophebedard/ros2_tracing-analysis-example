@@ -298,6 +298,7 @@ def plot_timer(
 def to_relative_ms(
     times_lists: List[List[pd.Timestamp]],
     ranges_lists: List[TimeRanges],
+    time_offset: float,
 ) -> None:
     """Transform timestamps to relative time in ms from beginning."""
     start = min(
@@ -305,12 +306,12 @@ def to_relative_ms(
         min(ranges[0] for ranges_list in ranges_lists for ranges in ranges_list),
     )
     for times_list in times_lists:
-        times_list[:] = [(time - start).total_seconds() * 1000.0 for time in times_list]
+        times_list[:] = [time_offset + ((time - start).total_seconds() * 1000.0) for time in times_list]
     for ranges_list in ranges_lists:
         ranges_list[:] = [
             (
-                (ranges[0] - start).total_seconds() * 1000.0,
-                (ranges[1] - start).total_seconds() * 1000.0,
+                time_offset + ((ranges[0] - start).total_seconds() * 1000.0),
+                time_offset + ((ranges[1] - start).total_seconds() * 1000.0),
                 ranges[2].total_seconds() * 1000.0
             )
             for ranges in ranges_list
@@ -359,6 +360,7 @@ def plot_chart(
     title: str = 'Message reception \& publication and timer execution',
     xlabel: str = 'time (ms)',
     name: str = '5_analysis_time_chart',
+    time_offset: float = 6.0,  # Manual adjustment
 ) -> None:
     """Plot time chart with msg reception, msg publication, and timer callback instances."""
     to_relative_ms(
@@ -374,6 +376,7 @@ def plot_chart(
         [
             ranges_timer_BehaviorPlanner,
         ],
+        time_offset,
     )
 
     fig, ax = plt.subplots(1, 1, constrained_layout=True)
