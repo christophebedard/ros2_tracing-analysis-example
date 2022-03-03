@@ -323,7 +323,7 @@ def add_markers_to_axis(
     times: List[float],
     color: str,
     marker: str = 'o',
-    markersize: int = 10,
+    markersize: int = 8,
 ) -> None:
     """Add time markers to axis."""
     ax.plot(times, [label] * len(times), marker + color, markersize=markersize)
@@ -334,7 +334,7 @@ def add_ranges_to_axis(
     label: str,
     ranges: List[Tuple[float, float, float]],
     color: str,
-    linewidth: int = 20,
+    linewidth: int = 35,
 ) -> None:
     """Add start-end ranges to axis."""
     for r in ranges:
