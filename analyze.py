@@ -369,6 +369,7 @@ def plot_chart(
     title: str = 'Message reception \& publication and timer execution',  # noqa: W605
     xlabel: str = 'time (ms)',
     name: str = '5_analysis_time_chart',
+    num_instances: int = 5,
     time_offset: float = 6.0,  # Manual adjustment
 ) -> None:
     """Plot time chart with msg reception, msg publication, and timer callback instances."""
@@ -388,8 +389,24 @@ def plot_chart(
         time_offset,
     )
 
+    # Keep only the instances we want
+    ranges_timer_BehaviorPlanner = ranges_timer_BehaviorPlanner[:num_instances]
+    # Pub instances shoud closely follow timer ranges
+    times_pub_BehaviorPlanner = times_pub_BehaviorPlanner[:num_instances]
+    # Drop sub times after the last timer callback instance start time
+
+    def filter_time(times: List[float], last_time: float) -> List[float]:
+        return [time for time in times if time <= last_time]
+
+    last_time = ranges_timer_BehaviorPlanner[len(ranges_timer_BehaviorPlanner) - 1][0]
+    times_sub_ObjectCollisionEstimator = filter_time(times_sub_ObjectCollisionEstimator, last_time)
+    times_sub_NDTLocalizer = filter_time(times_sub_NDTLocalizer, last_time)
+    times_sub_Lanelet2GlobalPlanner = filter_time(times_sub_Lanelet2GlobalPlanner, last_time)
+    times_sub_Lanelet2MapLoader = filter_time(times_sub_Lanelet2MapLoader, last_time)
+    times_sub_ParkingPlanner = filter_time(times_sub_ParkingPlanner, last_time)
+    times_sub_LanePlanner = filter_time(times_sub_LanePlanner, last_time)
+
     # Assign colours to link input messages to corresponding timer callback and output message
-    assert len(ranges_timer_BehaviorPlanner) == len(times_pub_BehaviorPlanner)
     colours = get_default_colors()[:len(ranges_timer_BehaviorPlanner)]
     deadlines = [r[0] for r in ranges_timer_BehaviorPlanner]
     ranges_timer_BehaviorPlanner = [
@@ -422,17 +439,16 @@ def plot_chart(
                     return colours[i]
         assert False, 'should have a matching colour'
 
-    def add_colour(times, pre):
-        for i in range(len(times)):
-            times[i] = (get_colour(times[i], pre), times[i])
+    def with_colour(times: List[float], pre: bool) -> List[Tuple[str, float]]:
+        return [(get_colour(times[i], pre), times[i]) for i in range(len(times))]
 
-    add_colour(times_pub_BehaviorPlanner, False)
-    add_colour(times_sub_LanePlanner, True)
-    add_colour(times_sub_ParkingPlanner, True)
-    add_colour(times_sub_Lanelet2MapLoader, True)
-    add_colour(times_sub_Lanelet2GlobalPlanner, True)
-    add_colour(times_sub_NDTLocalizer, True)
-    add_colour(times_sub_ObjectCollisionEstimator, True)
+    times_pub_BehaviorPlanner = with_colour(times_pub_BehaviorPlanner, False)
+    times_sub_LanePlanner = with_colour(times_sub_LanePlanner, True)
+    times_sub_ParkingPlanner = with_colour(times_sub_ParkingPlanner, True)
+    times_sub_Lanelet2MapLoader = with_colour(times_sub_Lanelet2MapLoader, True)
+    times_sub_Lanelet2GlobalPlanner = with_colour(times_sub_Lanelet2GlobalPlanner, True)
+    times_sub_NDTLocalizer = with_colour(times_sub_NDTLocalizer, True)
+    times_sub_ObjectCollisionEstimator = with_colour(times_sub_ObjectCollisionEstimator, True)
 
     fig, ax = plt.subplots(1, 1, constrained_layout=True)
 
@@ -497,16 +513,15 @@ def main(argv=sys.argv[1:]) -> int:
     plot_timer(ranges_timer_BehaviorPlanner)
 
     # Plot pub/sub/timer time chart
-    num = 4
     plot_chart(
-        times_sub_ObjectCollisionEstimator[:num],
-        times_sub_NDTLocalizer[:num],
-        times_sub_Lanelet2GlobalPlanner[:num],
-        times_sub_Lanelet2MapLoader[:num],
-        times_sub_ParkingPlanner[:num],
-        times_sub_LanePlanner[:num],
-        ranges_timer_BehaviorPlanner[:num + 1],
-        times_pub_BehaviorPlanner[:num + 1],
+        times_sub_ObjectCollisionEstimator,
+        times_sub_NDTLocalizer,
+        times_sub_Lanelet2GlobalPlanner,
+        times_sub_Lanelet2MapLoader,
+        times_sub_ParkingPlanner,
+        times_sub_LanePlanner,
+        ranges_timer_BehaviorPlanner,
+        times_pub_BehaviorPlanner,
     )
 
     plt.show()
